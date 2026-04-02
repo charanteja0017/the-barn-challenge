@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  barn-challenge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: barn-challenge:latest
+    container_name: barn-challenge
+    # Mount the local project directory so code changes are reflected
+    volumes:
+      - .:/jackal_ws/src/the-barn-challenge
+    # Required for Gazebo to run headless
+    environment:
+      - DISPLAY=
+      - QT_X11_NO_MITSHM=1
+    # Default command: run world 0
+    command: ["python3", "run.py", "--world_idx", "0"]
+    # Allow sufficient shared memory for Gazebo
+    shm_size: "512m"

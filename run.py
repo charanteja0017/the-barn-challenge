@@ -94,29 +94,21 @@ if __name__ == "__main__":
 
     ##########################################################################################
     ## 1. Launch your navigation stack
-    ## (Customize this block to add your own navigation stack)
+    ## (BC Navigator with safety layer)
     ##########################################################################################
-    
-    launch_file = join(base_path, '..', 'jackal_helper/launch/move_base_DWA.launch')
-    nav_stack_process = subprocess.Popen([
-        'roslaunch',
-        launch_file,
-    ])
-    
-    # Make sure your navigation stack recives the correct goal position defined in GOAL_POSITION
-    import actionlib
-    from geometry_msgs.msg import Quaternion
-    from move_base_msgs.msg import MoveBaseGoal, MoveBaseAction
-    nav_as = actionlib.SimpleActionClient('/move_base', MoveBaseAction)
-    mb_goal = MoveBaseGoal()
-    mb_goal.target_pose.header.frame_id = 'odom'
-    mb_goal.target_pose.pose.position.x = GOAL_POSITION[0]
-    mb_goal.target_pose.pose.position.y = GOAL_POSITION[1]
-    mb_goal.target_pose.pose.position.z = 0
-    mb_goal.target_pose.pose.orientation = Quaternion(0, 0, 0, 1)
 
-    nav_as.wait_for_server()
-    nav_as.send_goal(mb_goal)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = join(script_dir, "bc_model_best.pt")
+    goal_x = INIT_POSITION[0] + GOAL_POSITION[0]
+    goal_y = INIT_POSITION[1] + GOAL_POSITION[1]
+
+    nav_stack_process = subprocess.Popen([
+        'python3', join(script_dir, 'nav_node.py'),
+        '__name:=bc_navigator',
+        '_model_path:=' + model_path,
+        '_goal_x:=' + str(goal_x),
+        '_goal_y:=' + str(goal_y),
+    ])
 
 
 
