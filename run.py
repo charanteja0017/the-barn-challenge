@@ -66,7 +66,7 @@ if __name__ == "__main__":
         'world_name:=' + world_name,
         'gui:=' + ("true" if args.gui else "false")
     ])
-    time.sleep(5)  # sleep to wait until the gazebo being created
+    time.sleep(15)  # sleep to wait until the gazebo being created
     
     rospy.init_node('gym', anonymous=True) #, log_level=rospy.FATAL)
     rospy.set_param('/use_sim_time', True)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     goal_y = INIT_POSITION[1] + GOAL_POSITION[1]
 
     nav_stack_process = subprocess.Popen([
-        'python3', join(script_dir, 'nav_node.py'),
+        'python2', join(script_dir, 'nav_node.py'),
         '__name:=bc_navigator',
         '_model_path:=' + model_path,
         '_goal_x:=' + str(goal_x),

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 BC Navigation Node for BARN Challenge.
 

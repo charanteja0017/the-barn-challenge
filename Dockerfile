@@ -8,16 +8,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Create workspace
 RUN mkdir -p /jackal_ws/src
 
-# Install Python 3 venv and pip
+# Install Python 3 and pip
 RUN apt-get -y update && \
-    apt-get -y install python3-venv python3-pip git && \
+    apt-get -y install python3-pip git && \
     rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment and install Python dependencies
-RUN python3 -m venv /venv
-ENV PATH="/venv/bin:$PATH"
+# Install Python dependencies globally
 RUN pip3 install --upgrade pip && \
-    pip3 install defusedxml rospkg netifaces numpy
+    pip3 install defusedxml rospkg netifaces numpy torch
 
 # Clone required ROS packages
 # Note: jackal_desktop omitted (rviz/GUI not needed for headless testing)
@@ -57,7 +55,6 @@ RUN /bin/bash -c "source /opt/ros/melodic/setup.bash && \
     catkin_make"
 
 # Set up the environment
-ENV PATH="/venv/bin:$PATH"
 
 # Entrypoint: source the workspace and run commands
 COPY entrypoint_docker.sh /entrypoint_docker.sh
