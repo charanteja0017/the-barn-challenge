@@ -105,7 +105,7 @@ if __name__ == "__main__":
     ##########################################################################################
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    model_path = join(script_dir, "bc_model_best.pt")
+    model_path = join(script_dir, "models", "bc_model_best.pt")
     goal_x = INIT_POSITION[0] + GOAL_POSITION[0]
     goal_y = INIT_POSITION[1] + GOAL_POSITION[1]
 

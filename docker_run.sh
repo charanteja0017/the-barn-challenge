@@ -32,13 +32,13 @@ elif [ "$1" = "--trajectory" ]; then
     shift; shift 2>/dev/null || true
 fi
 
-if [ "$MODE" = "record" ]; then
+    if [ "$MODE" = "record" ]; then
     echo ">>> Recording simulation video for world ${WORLD_IDX} → ${OUTPUT_FILE}"
     docker run --rm \
         -v "$(pwd)":/jackal_ws/src/the-barn-challenge \
         --shm-size=512m \
         "$IMAGE_NAME" \
-        bash record_sim.sh "$WORLD_IDX" "$OUTPUT_FILE"
+        bash scripts/record_sim.sh "$WORLD_IDX" "$OUTPUT_FILE"
 
 elif [ "$MODE" = "trajectory" ]; then
     echo ">>> Running world ${WORLD_IDX} with trajectory saving"
@@ -49,7 +49,7 @@ elif [ "$MODE" = "trajectory" ]; then
         python3 run.py --world_idx "$WORLD_IDX" --save_trajectory
     
     echo ">>> Trajectory saved. Generate video with:"
-    echo "    python3 visualize_trajectory.py --trajectory trajectory_world_${WORLD_IDX}.npy --world_idx ${WORLD_IDX}"
+    echo "    python3 utils/visualize_trajectory.py --trajectory trajectory_world_${WORLD_IDX}.npy --world_idx ${WORLD_IDX}"
 
 else
     # Default command if none provided
