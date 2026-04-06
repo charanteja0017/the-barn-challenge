@@ -1,126 +1,109 @@
 <p align="center">
-  <img width = "100%" src='res/BARN_Challenge.png' />
-  </p>
+  <img width="100%" src='res/BARN_Challenge.png' alt="BARN Challenge" />
+</p>
 
 --------------------------------------------------------------------------------
 
-# ICRA BARN Navigation Challenge
+# ICRA 2026 BARN Challenge — Team 14
+### Behaviour Cloning for Autonomous Robot Navigation in Dense Obstacle Environments
 
-## Updates:
-* 01/15/2025: Adding support for ROS2 in [The-Barn-Challenge-Ros2](https://github.com/Saadmaghani/The-Barn-Challenge-Ros2).
-* 02/04/2024: Adding 60 [DynaBARN](https://github.com/aninair1905/DynaBARN) environments. DynaBARN environments can be accessed by world indexes from 300-359.
+**Team 14 | IIT Kharagpur**
+- Pampana Charan Teja (Leader) — 25AI60R22
+- Pucha Arun Kumar — 25AI60R26
+- Arkoti Charan Teja — 25AI60R19
+- Bommireddi Nagendra — 25AI60R14
+- Adarsh Raj — 25AI560R25
 
-## Requirements
-If you run it on a local machine without containers:
-* ROS version at least Kinetic
-* CMake version at least 3.0.2
-* Python version at least 3.6
-* Python packages: defusedxml, rospkg, netifaces, numpy
+## 1. Project Overview & Objective
 
-If you run it in Singularity containers:
-* Go version at least 1.13
-* Singularity version at least 3.6.3 and less than 4.02
+The goal of this project is to navigate a Clearpath Jackal robot (using 2D LiDAR) from a start coordinate to a goal across 360 highly constrained, unseen **BARN environments** (300 Static + 60 Dynamic). The objective is to achieve the highest possible **success rate** and navigation speed without collision.
 
-The requirements above are just suggestions. If you run into any issue, please contact organizers for help (zfxu@utexas.edu).
+**Hardware Constraint:** The simulation and physical deployment require the navigation stack to run on an **Intel i3 CPU without a GPU**, mandating highly optimized, real-time control (< 10ms inference per step).
 
-## Installation
-Follow the instructions below to run simulations on your local machines. (You can skip 1-6 if you only use Singularity container)
+### Key Methodologies (Our Approach):
+1. **Behavior Cloning (BC) Model:** A lightweight 1D Convolutional Neural Network (~300K parameters) imitating an expert classical planner (KUL+FM), taking 720 LiDAR rays and relative goal coordinates as input to predict linear and angular velocities.
+2. **Three-Tier Safety Layer:** Overrides network predictions when obstacles fall within a 60° forward cone. Features soft-braking below `0.45m` and an emergency rigid halt/avoidance rotation below `0.25m`.
+3. **Stuck Recovery FSM:** Safely breaks the robot loose from pathological geometry pockets if velocity drops below `0.05 m/s` for 2+ seconds by executing an automated rollback and turn sequence.
 
-1. Create a virtual environment (we show examples with python venv, you can use conda instead)
-```
-apt -y update; apt-get -y install python3-venv
-python3 -m venv /<YOUR_HOME_DIR>/nav_challenge
-export PATH="/<YOUR_HOME_DIR>/nav_challenge/bin:$PATH"
-```
+## 2. Directory Structure
 
-2. Install Python dependencies
-```
-pip3 install defusedxml rospkg netifaces numpy
-```
+We have heavily structured the repository for maximum clarity:
 
-3. Create ROS workspace
-```
-mkdir -p /<YOUR_HOME_DIR>/jackal_ws/src
-cd /<YOUR_HOME_DIR>/jackal_ws/src
-```
-
-4. Clone this repo and required ros packages: (replace `<YOUR_ROS_VERSION>` with your own, e.g. melodic)
-```
-git clone https://github.com/Daffan/the-barn-challenge.git
-git clone https://github.com/jackal/jackal.git --branch <YOUR_ROS_VERSION>-devel
-git clone https://github.com/jackal/jackal_simulator.git --branch <YOUR_ROS_VERSION>-devel
-git clone https://github.com/jackal/jackal_desktop.git --branch <YOUR_ROS_VERSION>-devel
-git clone https://github.com/utexas-bwi/eband_local_planner.git
-```
-
-5. Install ROS package dependencies: (replace `<YOUR_ROS_VERSION>` with your own, e.g. melodic)
-```
-cd ..
-source /opt/ros/<YOUR_ROS_VERSION>/setup.bash
-rosdep init; rosdep update
-rosdep install -y --from-paths . --ignore-src --rosdistro=<YOUR_ROS_VERSION>
+```text
+the-barn-challenge/
+├── Dockerfile                  # Self-contained ROS Docker configuration
+├── docker_run.sh               # Universal wrapper to trigger everything
+├── README.md                   # This documentation
+│
+├── nav_node.py                 # Core Navigation stack (BC + Safety Layer)
+├── bc_model.py                 # Neural Network Architecture
+├── run.py                      # Main Gazebo Simulation Executor
+├── gazebo_simulation.py        # Gazebo-Python interface wrapper
+│
+├── models/                     # Weights & Checkpoints
+│   ├── bc_model_best.pt        # PyTorch best weights
+│   └── bc_model.onnx           # CPU-optimized ONNX graph
+│
+├── utils/                      # Auxiliary & Visualization Tools
+│   ├── create_ppt.py           # Slide generator for PPT presentation
+│   ├── generate_plots.py       # Matplotlib report plotting
+│   ├── fix_camera_angle.py     # Forces Gazebo camera to natively track car
+│   └── visualize_trajectory.py # Renders 2D top-down path maps
+│
+├── scripts/                    # Batch & Execution Scripts
+│   ├── record_sim.sh           # Headless Xvfb → FFmpeg 3D Video Recorder
+│   ├── run_batch.sh            # Runs 50-world evaluation batches
+│   └── test.sh                 # Standard loop tester
+│
+└── presentation/               # Auto-generated reports and videos
+    └── BARN_Challenge_Presentation.pptx
 ```
 
-6. Build the workspace (if `catkin_make` fails, try changing `-std=c++11` to `-std=c++17` in `jackal_helper/CMakeLists.txt` line 3)
-```
-catkin_make
-source devel/setup.bash
-```
+## 3. Installation & Setup
 
-Follow the instruction below to run simulations in Singularity containers.
+We strictly utilize **Docker** to ensure our ROS Melodic and Gazebo dependencies compile instantly and reproducibly on any system (macOS/Linux). 
 
-1. Follow this instruction to install Singularity: https://sylabs.io/guides/3.0/user-guide/installation.html. Singularity version >= 3.6.3 and <= 4.02 is required to successfully build the image!
+1. Ensure the Docker daemon is running on your host machine.
+2. The provided `docker_run.sh` entrypoint will automatically build the `barn-challenge:latest` image upon its first run (this takes ~10 minutes).
 
-2. Clone this repo
-```
-git clone https://github.com/Daffan/the-barn-challenge.git
-cd the-barn-challenge
-```
+## 4. How to Use & Run
 
-3. Build Singularity image (sudo access required)
-```
-sudo singularity build --notest nav_competition_image.sif Singularityfile.def
+All interactions with the repository are done effortlessly through the `docker_run.sh` script to avoid host machine environment conflicts.
+
+### Standard Simulation (Headless Metric Output)
+To simply execute the robot in World 0 and view terminal times/collisions:
+```bash
+./docker_run.sh python3 run.py --world_idx 0
 ```
 
-## Run Simulations
-Navigate to the folder of this repo. Below is the example to run move_base with DWA as local planner.
-
-If you run it on your local machines: (the example below runs [move_base](http://wiki.ros.org/move_base) with DWA local planner in world 0)
+### Save Trajectory & Generate 2D Plots
+To log the coordinate path and generate a 2D overhead navigation map of the run:
+```bash
+./docker_run.sh --trajectory 0
 ```
-source ../../devel/setup.sh
-python3 run.py --world_idx 0
+This drops the `.npy` path arrays into `outputs/trajectories/` and outputs the exact command to run the visualizer.
+
+### Record 3D Simulation Video 🎥
+We've engineered a headless pipeline using `Xvfb` and `ffmpeg` that renders the beautiful, fully-tracked 3D Jackal Gazebo window perfectly into an MP4 file on your host machine:
+
+```bash
+./docker_run.sh --record 0 presentation/gazebo_video_tracked.mp4
+```
+*The `fix_camera_angle.py` utility has embedded `<track_visual>` properties seamlessly into all worlds so the camera will dynamically follow the robot throughout the maze!*
+
+### Run Batch Evaluations
+To execute the baseline tester across an array of worlds to generate statistical JSON and TXT aggregated grading:
+```bash
+./docker_run.sh bash scripts/run_batch.sh 0 10 20 30 40
 ```
 
-If you run it in a Singularity container:
+## 5. Visual Artifacts & Presentations
+
+Run the provided PPT script to automatically generate the 15-page final report slide deck covering methodology, simulation results, and charts (embedded graphs generate automatically via `generate_plots.py`):
+```bash
+./docker_run.sh python3 utils/create_ppt.py
 ```
-./singularity_run.sh /path/to/image/file python3 run.py --world_idx 0
-```
+This is saved natively to the `presentation/` folder.
 
-A successful run should print the episode status (collided/succeeded/timeout) and the time cost in second:
-> \>>>>>>>>>>>>>>>>>> Test finished! <<<<<<<<<<<<<<<<<<
->
-> Navigation collided with time 27.2930 (s)
-
-> \>>>>>>>>>>>>>>>>>> Test finished! <<<<<<<<<<<<<<<<<<
->
-> Navigation succeeded with time 29.4610 (s)
-
-
-> \>>>>>>>>>>>>>>>>>> Test finished! <<<<<<<<<<<<<<<<<<
->
->Navigation timeout with time 100.0000 (s)
-
-## Test your own navigation stack
-We currently don't provide a lot of instructions or a standard API for implementing the navigation stack, but we might add more in this section depending on people's feedback. If you are new to the ROS or mobile robot navigation, we suggest checking [move_base](http://wiki.ros.org/move_base) which provides basic interface to manipulate a robot.
-
-The suggested work flow is to edit section 1 in `run.py` file (line 89-109) that initialize your own navigation stack. You should not edit other parts in this file. We provide a bash script `test.sh` to run your navigation stack on 50 uniformly sampled BARN worlds with 10 runs for each world. Once the tests finish, run `python report_test.py --out_path /path/to/out/file` to report the test. Below is an example of DWA:
-```
-python report_test.py --out_path res/dwa_out.txt
-```
-You should see the report as this:
->Avg Time: 33.4715, Avg Metric: 0.1693, Avg Success: 0.8800, Avg Collision: 0.0480, Avg Timeout: 0.0720
-
-Except for `DWA`, we also provide three learning-based navigation stack as examples (see branch `LfH`, `applr` and `e2e`).
-
-## Submission
-Submit a link that downloads your customized repository to this [Google form](https://docs.google.com/forms/d/e/1FAIpQLSfZLMVluXE-HWnV9lNP00LuBi3e9HFOeLi30p9tsHUViWpqrA/viewform). Your navigation stack will be tested in the Singularity container on 50 hold-out BARN worlds sampled from the same distribution as the 300 BARN worlds. In the repository, make sure the `run.py` runs your navigation stack and `Singularityfile.def` installs all the dependencies of your repo. We suggest to actually build an image and test it with `./singularity_run.sh /path/to/image/file python3 run.py --world_idx 0`. You can also refer to branch `LfH`, `applr` and `e2e`, which are in the correct form for submissions.
+---
+*Based on the original dataset provided by the [BARN Challenge Official Committee](https://people.cs.gmu.edu/~xiao/Research/BARN_Challenge/BARN_Challenge26.html).*
