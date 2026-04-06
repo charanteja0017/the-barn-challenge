@@ -683,10 +683,15 @@
           </visual>
         </link>
       </model>
-       <gui fullscreen='0'>
+           <gui fullscreen='1'>
       <camera name='user_camera'>
         <pose>-2.25 0 14 0 0.65 3.14</pose>
         <view_controller>orbit</view_controller>
+        <track_visual>
+          <name>jackal</name>
+          <min_dist>5.0</min_dist>
+          <max_dist>20.0</max_dist>
+        </track_visual>
       </camera>
     </gui>
   </world>

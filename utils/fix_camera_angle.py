@@ -6,10 +6,15 @@ def fix_worlds(directory, start_y=0, z=15, pitch=0.8, yaw=1.57):
     world_files = glob.glob(os.path.join(directory, "*.world"))
     print(f"Found {len(world_files)} world files in {directory}")
 
-    gui_tag = f"""    <gui fullscreen='0'>
+    gui_tag = f"""    <gui fullscreen='1'>
       <camera name='user_camera'>
         <pose>-2.25 {start_y} {z} 0 {pitch} {yaw}</pose>
         <view_controller>orbit</view_controller>
+        <track_visual>
+          <name>jackal</name>
+          <min_dist>5.0</min_dist>
+          <max_dist>20.0</max_dist>
+        </track_visual>
       </camera>
     </gui>"""
 

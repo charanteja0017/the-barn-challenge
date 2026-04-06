@@ -13,7 +13,7 @@ import os
 
 # ─── Constants ──────────────────────────────────────────────────────────────────
 PLOTS_DIR = "outputs/plots"
-OUTPUT_FILE = "outputs/BARN_Challenge_Presentation.pptx"
+OUTPUT_FILE = "presentation/BARN_Challenge_Presentation.pptx"
 
 # Colors
 BG_DARK    = RGBColor(0x0F, 0x17, 0x2A)  # #0F172A
