@@ -31,7 +31,14 @@ if __name__ == "__main__":
     parser.add_argument('--world_idx', type=int, default=0)
     parser.add_argument('--gui', action="store_true")
     parser.add_argument('--out', type=str, default="out.txt")
+    parser.add_argument('--save_trajectory', action="store_true",
+                        help='Save robot trajectory to .npy file for visualization')
+    parser.add_argument('--trajectory_file', type=str, default=None,
+                        help='Output trajectory file (default: trajectory_world_<idx>.npy)')
     args = parser.parse_args()
+    
+    if args.trajectory_file is None:
+        args.trajectory_file = "trajectory_world_%d.npy" % args.world_idx
     
     ##########################################################################################
     ## 0. Launch Gazebo Simulation
@@ -103,7 +110,7 @@ if __name__ == "__main__":
     goal_y = INIT_POSITION[1] + GOAL_POSITION[1]
 
     nav_stack_process = subprocess.Popen([
-        'python2', join(script_dir, 'nav_node.py'),
+        'python3', join(script_dir, 'nav_node.py'),
         '__name:=bc_navigator',
         '_model_path:=' + model_path,
         '_goal_x:=' + str(goal_x),
@@ -133,6 +140,7 @@ if __name__ == "__main__":
     start_time = curr_time
     start_time_cpu = time.time()
     collided = False
+    trajectory_log = []  # list of (time, x, y) for trajectory saving
     
     while compute_distance(goal_coor, curr_coor) > 1 and not collided and curr_time - start_time < 100:
         curr_time = rospy.get_time()
@@ -140,6 +148,8 @@ if __name__ == "__main__":
         curr_coor = (pos.x, pos.y)
         print("Time: %.2f (s), x: %.2f (m), y: %.2f (m)" %(curr_time - start_time, *curr_coor), end="\r")
         collided = gazebo_sim.get_hard_collision()
+        # Log trajectory point
+        trajectory_log.append([curr_time - start_time, pos.x, pos.y])
         while rospy.get_time() - curr_time < 0.1:
             time.sleep(0.01)
 
@@ -181,6 +191,12 @@ if __name__ == "__main__":
     
     with open(args.out, "a") as f:
         f.write("%d %d %d %d %.4f %.4f\n" %(args.world_idx, success, collided, (curr_time - start_time)>=100, curr_time - start_time, nav_metric))
+    
+    # Save trajectory if requested
+    if args.save_trajectory and len(trajectory_log) > 0:
+        traj_array = np.array(trajectory_log)
+        np.save(args.trajectory_file, traj_array)
+        print("Trajectory saved to %s (%d points)" % (args.trajectory_file, len(trajectory_log)))
     
     gazebo_process.terminate()
     gazebo_process.wait()

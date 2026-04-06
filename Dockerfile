@@ -8,14 +8,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Create workspace
 RUN mkdir -p /jackal_ws/src
 
-# Install Python 3 and pip
+# Install Python 3, pip, and video recording tools
 RUN apt-get -y update && \
-    apt-get -y install python3-pip git && \
+    apt-get -y install python3-pip git \
+    xvfb ffmpeg mesa-utils libgl1-mesa-dri libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies globally
 RUN pip3 install --upgrade pip && \
-    pip3 install defusedxml rospkg netifaces numpy torch
+    pip3 install defusedxml rospkg netifaces numpy torch pyparsing==2.4.7
 
 # Clone required ROS packages
 # Note: jackal_desktop omitted (rviz/GUI not needed for headless testing)
